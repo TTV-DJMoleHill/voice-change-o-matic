@@ -1,10 +1,33 @@
-const heading = document.querySelector('h1');
-heading.textContent = 'CLICK ANYWHERE TO START'
-document.body.addEventListener('click', init);
+// const heading = document.querySelector('h1');
+// heading.textContent = 'CLICK ANYWHERE TO START'
+
+// document.body.addEventListener('click', init);
+window.setTimeout(init, 1000);
+
+counter = 0;
+
+class Value {
+  constructor() {
+    this.value = 0;
+    this.velocity = 0.05;
+  }
+
+  step() {
+    this.value += this.velocity - (2.0 * this.velocity * Math.random());
+    if (this.value >= 255) {
+      this.value = 255;
+    } else if (this.value <= 0) {
+      this.value = 0;
+    }
+  }
+};
+
+const greenValue = new Value();
+const blueValue = new Value();
 
 function init() {
-  heading.textContent = 'Voice-change-O-matic';
-  document.body.removeEventListener('click', init);
+  // heading.textContent = 'Voice-change-O-matic';
+  // document.body.removeEventListener('click', init);
 
   // Older browsers might not implement mediaDevices at all, so we set an empty
   // object first.
@@ -40,12 +63,12 @@ function init() {
   // Set up forked web audio context, for multiple browsers
   // window. It is required for safari.
   const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  const voiceSelect = document.getElementById("voice");
+  // const voiceSelect = document.getElementById("voice");
   let source;
   let stream;
 
   // Grab the mute button to use below.
-  const mute = document.querySelector('.mute');
+  // const mute = document.querySelector('.mute');
 
   // Set up the different audio nodes we will use for the app.
   const analyser = audioCtx.createAnalyser();
@@ -102,7 +125,8 @@ function init() {
   const canvas = document.querySelector('.visualizer');
   const canvasCtx = canvas.getContext('2d');
 
-  const intendedWidth = document.querySelector('.wrapper').clientWidth;
+  // const intendedWidth = document.querySelector('.wrapper').clientWidth;
+  const intendedWidth = canvas.width;
 
   canvas.setAttribute('width', intendedWidth);
 
@@ -121,7 +145,7 @@ function init() {
           biquadFilter.connect(gainNode);
           convolver.connect(gainNode);
           gainNode.connect(analyser);
-          analyser.connect(audioCtx.destination);
+          // analyser.connect(audioCtx.destination);
 
           visualize();
           voiceChange();
@@ -136,7 +160,8 @@ function init() {
     WIDTH = canvas.width;
     HEIGHT = canvas.height;
 
-    const visualSetting = visualSelect.value;
+    // const visualSetting = visualSelect.value;
+    const visualSetting = 'frequencybars';
     console.log(visualSetting);
 
     if (visualSetting === 'sinewave') {
@@ -199,15 +224,33 @@ function init() {
         canvasCtx.fillRect(0, 0, WIDTH, HEIGHT);
 
         const barWidth = (WIDTH / bufferLengthAlt) * 2.5;
-        let barHeight;
         let x = 0;
 
+        // TODO: Consider normalizing this up to full height every frame (kind of boring to look at not full height bars).
         for (let i = 0; i < bufferLengthAlt; i++) {
-          barHeight = dataArrayAlt[i];
+          const barHeight = dataArrayAlt[i];
 
-          canvasCtx.fillStyle = 'rgb(' + (barHeight + 100) + ',50,50)';
-          canvasCtx.fillRect(x, HEIGHT - barHeight / 2, barWidth,
-                             barHeight / 2);
+          // canvasCtx.fillStyle = 'rgb(' + (barHeight + 100) + ',50,50)';
+          canvasCtx.fillStyle = 'rgb(' + (barHeight + 100) + ',' + Math.floor(greenValue.value) + ',' + Math.floor(blueValue.value) + ')';
+          greenValue.step();
+          blueValue.step();
+
+          // Logging hack:
+          ++counter;
+          if (counter === 10000) {
+            // console.log(Math.round(greenValue.value, 2), Math.round(blueValue.value, 2));
+            console.log(greenValue.value, blueValue.value, 2);
+            counter = 0;
+          }
+
+          // canvasCtx.fillRect(x, HEIGHT - barHeight / 2, barWidth,
+          //                    barHeight / 2);
+          canvasCtx.fillRect(
+              x,
+              HEIGHT,
+              barWidth,
+              -barHeight);
+            
 
           x += barWidth + 1;
         }
@@ -226,7 +269,8 @@ function init() {
     distortion.oversample = '4x';
     biquadFilter.gain.setTargetAtTime(0, audioCtx.currentTime, 0)
 
-    const voiceSetting = voiceSelect.value;
+    // const voiceSetting = voiceSelect.value;
+    const voiceSetting = 'convolver';
     console.log(voiceSetting);
 
     // When convolver is selected it is connected back into the audio path.
@@ -250,14 +294,12 @@ function init() {
   }
 
   // Event listeners to change visualize and voice settings:
-  visualSelect.onchange = function() {
-    window.cancelAnimationFrame(drawVisual);
-    visualize();
-  };
-
-  voiceSelect.onchange = function() { voiceChange(); };
-
-  mute.onclick = voiceMute;
+  // visualSelect.onchange = function() {
+  //   window.cancelAnimationFrame(drawVisual);
+  //   visualize();
+  // };
+  // voiceSelect.onchange = function() { voiceChange(); };
+  // mute.onclick = voiceMute;
 
   function voiceMute() {
     if (mute.id === '') {
