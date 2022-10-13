@@ -1,8 +1,8 @@
 // const heading = document.querySelector('h1');
 // heading.textContent = 'CLICK ANYWHERE TO START'
 
-// document.body.addEventListener('click', init);
-window.setTimeout(init, 1000);
+document.body.addEventListener('click', init);
+// window.setTimeout(init, 1000);
 
 counter = 0;
 
@@ -26,6 +26,7 @@ const greenValue = new Value();
 const blueValue = new Value();
 
 function init() {
+  console.log('init')
   // heading.textContent = 'Voice-change-O-matic';
   // document.body.removeEventListener('click', init);
 
@@ -94,32 +95,28 @@ function init() {
   };
 
   // Grab audio track via XHR for convolver node.
-  let soundSource;
-  ajaxRequest = new XMLHttpRequest();
-
-  ajaxRequest.open(
-      'GET',
-      'https://mdn.github.io/voice-change-o-matic/audio/concert-crowd.ogg',
-      true);
-
-  ajaxRequest.responseType = 'arraybuffer';
-
-  ajaxRequest.onload = function() {
-    const audioData = ajaxRequest.response;
-    audioCtx.decodeAudioData(
-        audioData,
-        function(buffer) {
-          soundSource = audioCtx.createBufferSource();
-          convolver.buffer = buffer;
-        },
-        function(e) { console.log('Error with decoding audio data' + e.err); });
-
-    // soundSource.connect(audioCtx.destination);
-    // soundSource.loop = true;
-    // soundSource.start();
-  };
-
-  ajaxRequest.send();
+  // let soundSource;
+  // ajaxRequest = new XMLHttpRequest();
+  // ajaxRequest.open(
+  //     'GET',
+  //     'https://mdn.github.io/voice-change-o-matic/audio/concert-crowd.ogg',
+  //     true);
+  // ajaxRequest.responseType = 'arraybuffer';
+  // ajaxRequest.onload = function() {
+  //   const audioData = ajaxRequest.response;
+  //   audioCtx.decodeAudioData(
+  //       audioData,
+  //       function(buffer) {
+  //         soundSource = audioCtx.createBufferSource();
+  //         convolver.buffer = buffer;
+  //       },
+  //       function(e) { console.log('Error with decoding audio data' + e.err);
+  //       });
+  //   // soundSource.connect(audioCtx.destination);
+  //   // soundSource.loop = true;
+  //   // soundSource.start();
+  // };
+  // ajaxRequest.send();
 
   // Set up canvas context for visualizer.
   const canvas = document.querySelector('.visualizer');
@@ -135,17 +132,30 @@ function init() {
 
   // Main block for doing the audio recording:
   if (navigator.mediaDevices.getUserMedia) {
+    // navigator.mediaDevices.enumerateDevices()
+    //   .then((devices) => {
+    //     devices.forEach((device) => {
+    //       console.log(`${device.kind}: ${device.label} id =
+    //       ${device.deviceId}`);
+    //     });
+    //   })
+    //   .catch((err) => {
+    //     console.error(`${err.name}: ${err.message}`);
+    //   });
+
     console.log('getUserMedia supported.');
     const constraints = {audio : true};
     navigator.mediaDevices.getUserMedia(constraints)
         .then(function(stream) {
           source = audioCtx.createMediaStreamSource(stream);
-          source.connect(distortion);
-          distortion.connect(biquadFilter);
-          biquadFilter.connect(gainNode);
-          convolver.connect(gainNode);
-          gainNode.connect(analyser);
+          // source.connect(distortion);
+          // distortion.connect(biquadFilter);
+          // biquadFilter.connect(gainNode);
+          // convolver.connect(gainNode);
+          // gainNode.connect(analyser);
           // analyser.connect(audioCtx.destination);
+
+          source.connect(analyser);
 
           visualize();
           voiceChange();
@@ -221,36 +231,37 @@ function init() {
         analyser.getByteFrequencyData(dataArrayAlt);
 
         canvasCtx.fillStyle = 'rgb(0, 0, 0)';
+        // canvasCtx.fillStyle = 'rgb(50, 50, 50)';
         canvasCtx.fillRect(0, 0, WIDTH, HEIGHT);
 
         const barWidth = (WIDTH / bufferLengthAlt) * 2.5;
         let x = 0;
 
-        // TODO: Consider normalizing this up to full height every frame (kind of boring to look at not full height bars).
+        // TODO: Consider normalizing this up to full height every frame (kind
+        // of boring to look at not full height bars).
         for (let i = 0; i < bufferLengthAlt; i++) {
           const barHeight = dataArrayAlt[i];
 
           // canvasCtx.fillStyle = 'rgb(' + (barHeight + 100) + ',50,50)';
-          canvasCtx.fillStyle = 'rgb(' + (barHeight + 100) + ',' + Math.floor(greenValue.value) + ',' + Math.floor(blueValue.value) + ')';
+          canvasCtx.fillStyle = 'rgb(' + (barHeight + 100) + ',' +
+                                Math.floor(greenValue.value) + ',' +
+                                Math.floor(blueValue.value) + ')';
           greenValue.step();
           blueValue.step();
 
           // Logging hack:
           ++counter;
           if (counter === 10000) {
-            // console.log(Math.round(greenValue.value, 2), Math.round(blueValue.value, 2));
-            console.log(greenValue.value, blueValue.value, 2);
+            // console.log(Math.round(greenValue.value, 2),
+            // Math.round(blueValue.value, 2)); console.log(greenValue.value,
+            // blueValue.value, 2);
+            console.log(barHeight);
             counter = 0;
           }
 
           // canvasCtx.fillRect(x, HEIGHT - barHeight / 2, barWidth,
           //                    barHeight / 2);
-          canvasCtx.fillRect(
-              x,
-              HEIGHT,
-              barWidth,
-              -barHeight);
-            
+          canvasCtx.fillRect(x, HEIGHT, barWidth, -barHeight);
 
           x += barWidth + 1;
         }
@@ -270,7 +281,7 @@ function init() {
     biquadFilter.gain.setTargetAtTime(0, audioCtx.currentTime, 0)
 
     // const voiceSetting = voiceSelect.value;
-    const voiceSetting = 'convolver';
+    const voiceSetting = 'off';
     console.log(voiceSetting);
 
     // When convolver is selected it is connected back into the audio path.
